@@ -1,0 +1,101 @@
+# =========================
+# 运行与缓存文件
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# C 扩展
+# =========================
+*.so
+
+# =========================
+# 虚拟环境 (Virtual Environments)
+# 截图中的 .venv 已包含在此处
+# =========================
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+# IDE 与编辑器配置
+# 截图中的 .idea 已包含在此处
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# =========================
+# 环境变量与机密文件
+# =========================
+.env
+.env.local
+.env.*.local
+*.pem
+
+# =========================
+# 构建与分发目录 (Build & Distribution)
+# =========================
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# =========================
+# 测试与覆盖率报告 (Testing & Coverage)
+# =========================
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+htmlcov/
+
+# =========================
+# 日志文件 (Logs)
+# =========================
+*.log
+
+# =========================
+# Jupyter Notebook
+# =========================
+.ipynb_checkpoints
+
+# =========================
+# 类型检查 (Type Checking)
+# =========================
+.mypy_cache/
+.pyre/
+.typeguard_cache/
+
+# =========================
+# 操作系统生成文件 (macOS/Windows)
+# =========================
+.DS_Store
+Thumbs.db
