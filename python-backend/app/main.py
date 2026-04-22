@@ -25,7 +25,6 @@ from app.middleware import AccessLogMiddleware, RequestIdMiddleware
 # ── Route imports ────────────────────────────────────────────────────────────
 from app.api.health import router as health_router
 from app.api.server_providers import router as server_providers_router
-from app.api.settings import router as settings_router
 from app.api.classroom import router as classroom_router
 from app.api.generate_classroom import router as generate_classroom_router
 from app.api.chat import router as chat_router
@@ -50,7 +49,6 @@ from app.api.generate.image import router as image_gen_router
 from app.api.generate.video import router as video_gen_router
 
 from core.security.secret_masking import mask_secret
-from core.storage.settings_db import close_pool
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -93,7 +91,6 @@ API_PREFIX = "/api"
 for router in (
     health_router,
     server_providers_router,
-    settings_router,
     classroom_router,
     generate_classroom_router,
     chat_router,
@@ -158,26 +155,5 @@ async def _log_provider_summary() -> None:
             log.info("  %-6s providers: (none configured)", label)
 
     log.info(
-        "Config priority: client headers > saved DB settings > .env / env vars > server-providers.yml > defaults"
+        "Config priority: client headers > .env / env vars > server-providers.yml > defaults"
     )
-
-    # Pre-warm MySQL pool and run schema migration on startup.
-    try:
-        from core.storage.settings_db import _get_pool
-        await _get_pool()
-        log.info(
-            "MySQL connected (%s:%s/%s)",
-            settings.mysql_host, settings.mysql_port, settings.mysql_database,
-        )
-    except Exception as exc:
-        log.warning(
-            "MySQL unavailable at startup (%s) — settings persistence will fail "
-            "until the database is reachable.",
-            exc,
-        )
-
-
-@app.on_event("shutdown")
-async def _close_mysql_pool() -> None:
-    """Gracefully drain and close the MySQL connection pool."""
-    await close_pool()

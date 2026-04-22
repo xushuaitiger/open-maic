@@ -279,6 +279,7 @@ export interface StatelessChatRequest {
   apiKey: string;
   baseUrl?: string;
   model?: string;
+  providerType?: string;
 }
 
 /**

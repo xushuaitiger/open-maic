@@ -1,0 +1,66 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - button "EN" [ref=e5]
+      - button [ref=e8]:
+        - img [ref=e9]
+      - button [ref=e13]:
+        - img [ref=e14]
+    - generic [ref=e17]:
+      - img "OpenMAIC" [ref=e18]
+      - paragraph [ref=e19]: Generative Learning in Multi-Agent Interactive Classroom
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e24] [cursor=pointer]:
+            - img [ref=e28]
+            - generic [ref=e32]:
+              - generic [ref=e33]: Hi, Learner
+              - img [ref=e34]
+          - button "Ready to learn together? AI Teacher" [ref=e38] [cursor=pointer]:
+            - generic [ref=e39]: Ready to learn together?
+            - generic [ref=e40]:
+              - img "AI Teacher" [ref=e42]
+              - img [ref=e43]
+            - img [ref=e47]
+        - textbox "Tell me anything you want to learn, e.g. \"Teach me Python from scratch in 30 minutes\" \"Explain Fourier Transform on the whiteboard\" \"How to play the board game Avalon\"" [ref=e49]:
+          - /placeholder: "Tell me anything you want to learn, e.g.\n\"Teach me Python from scratch in 30 minutes\"\n\"Explain Fourier Transform on the whiteboard\"\n\"How to play the board game Avalon\""
+        - generic [ref=e50]:
+          - generic [ref=e52]:
+            - button "OpenAI" [ref=e53] [cursor=pointer]:
+              - img "OpenAI" [ref=e54]
+            - button [ref=e56] [cursor=pointer]:
+              - img [ref=e57]
+            - button [disabled] [ref=e59]:
+              - img [ref=e60]
+            - button [ref=e66] [cursor=pointer]:
+              - img [ref=e67]
+              - img [ref=e68]
+          - button "Interactive Mode" [ref=e71] [cursor=pointer]:
+            - img [ref=e72]
+            - generic [ref=e76]: Interactive Mode
+          - button [ref=e77] [cursor=pointer]:
+            - img [ref=e78]
+          - button "Enter Classroom" [disabled] [ref=e81]:
+            - generic [ref=e82]: Enter Classroom
+            - img [ref=e83]
+      - button "Import Classroom" [ref=e85]:
+        - img [ref=e86]
+        - generic [ref=e89]: Import Classroom
+    - generic [ref=e90]: OpenMAIC Open Source Project
+  - region "Notifications alt+T"
+  - generic [ref=e95] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e96]:
+      - img [ref=e97]
+    - generic [ref=e100]:
+      - button "Open issues overlay" [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e103]: "0"
+          - generic [ref=e104]: "1"
+        - generic [ref=e105]: Issue
+      - button "Collapse issues badge" [ref=e106]:
+        - img [ref=e107]
+  - alert [ref=e109]
+```

@@ -15,7 +15,7 @@
  * - https://api-docs.deepseek.com/quick_start/pricing
  * - https://platform.moonshot.cn/docs/pricing/chat
  * - https://platform.minimaxi.com/docs/guides/text-generation
- * - https://platform.minimax.io/docs/api-reference/text-anthropic-api
+ * - https://platform.minimaxi.com/docs/api-reference/text-anthropic-api
  * - https://docs.bigmodel.cn/cn/guide/start/model-overview
  * - https://help.aliyun.com/zh/model-studio/models (Qwen/DashScope)
  * - https://siliconflow.cn/models
@@ -45,6 +45,9 @@ const log = createLogger('AIProviders');
 // Re-export types for backward compatibility
 export type { ProviderId, ProviderConfig, ModelInfo, ModelConfig };
 
+/** Provider IDs whose logos are monochrome-dark and need `dark:invert` in dark mode */
+export const MONO_LOGO_PROVIDERS: ReadonlySet<string> = new Set(['openai', 'ollama']);
+
 /**
  * Provider registry
  */
@@ -57,6 +60,54 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     requiresApiKey: true,
     icon: '/logos/openai.svg',
     models: [
+      {
+        id: 'gpt-5.4',
+        name: 'GPT-5.4',
+        contextWindow: 1000000,
+        outputWindow: 128000,
+        capabilities: {
+          streaming: true,
+          tools: true,
+          vision: true,
+          thinking: {
+            toggleable: true,
+            budgetAdjustable: true,
+            defaultEnabled: false,
+          },
+        },
+      },
+      {
+        id: 'gpt-5.4-mini',
+        name: 'GPT-5.4 Mini',
+        contextWindow: 400000,
+        outputWindow: 128000,
+        capabilities: {
+          streaming: true,
+          tools: true,
+          vision: true,
+          thinking: {
+            toggleable: true,
+            budgetAdjustable: true,
+            defaultEnabled: false,
+          },
+        },
+      },
+      {
+        id: 'gpt-5.4-nano',
+        name: 'GPT-5.4 Nano',
+        contextWindow: 400000,
+        outputWindow: 128000,
+        capabilities: {
+          streaming: true,
+          tools: true,
+          vision: true,
+          thinking: {
+            toggleable: true,
+            budgetAdjustable: true,
+            defaultEnabled: false,
+          },
+        },
+      },
       {
         id: 'gpt-5.2',
         name: 'GPT-5.2',
@@ -158,6 +209,7 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
         outputWindow: 4096,
         capabilities: { streaming: true, tools: true, vision: true },
       },
+
       {
         id: 'o4-mini',
         name: 'o4-mini',
@@ -325,22 +377,6 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
         },
       },
       {
-        id: 'gemini-3-pro-preview',
-        name: 'Gemini 3 Pro Preview',
-        contextWindow: 1048576,
-        outputWindow: 65536,
-        capabilities: {
-          streaming: true,
-          tools: true,
-          vision: true,
-          thinking: {
-            toggleable: false,
-            budgetAdjustable: true,
-            defaultEnabled: true,
-          },
-        },
-      },
-      {
         id: 'gemini-3-flash-preview',
         name: 'Gemini 3 Flash Preview',
         contextWindow: 1048576,
@@ -412,10 +448,29 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     name: 'GLM',
     type: 'openai',
     defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    alternateBaseUrls: [
+      { label: 'settings.baseUrlRegion.china', url: 'https://open.bigmodel.cn/api/paas/v4' },
+      { label: 'settings.baseUrlRegion.international', url: 'https://api.z.ai/api/paas/v4' },
+    ],
     requiresApiKey: true,
     icon: '/logos/glm.svg',
     models: [
-      // GLM-5 Series - Latest flagship model
+      // GLM-5.1 Series - Latest flagship model
+      {
+        id: 'glm-5.1',
+        name: 'GLM-5.1',
+        contextWindow: 200000,
+        outputWindow: 128000,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'glm-5v-turbo',
+        name: 'GLM-5V-Turbo',
+        contextWindow: 200000,
+        outputWindow: 128000,
+        capabilities: { streaming: true, tools: true, vision: true },
+      },
+      // GLM-5 Series
       {
         id: 'glm-5',
         name: 'GLM-5',
@@ -586,6 +641,10 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     name: 'Kimi',
     type: 'openai',
     defaultBaseUrl: 'https://api.moonshot.cn/v1',
+    alternateBaseUrls: [
+      { label: 'settings.baseUrlRegion.china', url: 'https://api.moonshot.cn/v1' },
+      { label: 'settings.baseUrlRegion.international', url: 'https://api.moonshot.ai/v1' },
+    ],
     requiresApiKey: true,
     icon: '/logos/kimi.png',
     models: [
@@ -665,12 +724,16 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     name: 'MiniMax',
     type: 'anthropic',
     defaultBaseUrl: 'https://api.minimaxi.com/anthropic/v1',
+    alternateBaseUrls: [
+      { label: 'settings.baseUrlRegion.china', url: 'https://api.minimaxi.com/anthropic/v1' },
+      { label: 'settings.baseUrlRegion.international', url: 'https://api.minimax.io/anthropic/v1' },
+    ],
     requiresApiKey: true,
     icon: '/logos/minimax.svg',
     models: [
       {
-        id: 'MiniMax-M2.5',
-        name: 'MiniMax M2.5',
+        id: 'MiniMax-M2',
+        name: 'MiniMax M2',
         contextWindow: 204800,
         outputWindow: 8192,
         capabilities: { streaming: true, tools: true, vision: false },
@@ -683,15 +746,36 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
         capabilities: { streaming: true, tools: true, vision: false },
       },
       {
-        id: 'MiniMax-M2.1-lightning',
-        name: 'MiniMax M2.1 Lightning',
+        id: 'MiniMax-M2.1-highspeed',
+        name: 'MiniMax M2.1 Highspeed',
         contextWindow: 204800,
         outputWindow: 8192,
         capabilities: { streaming: true, tools: true, vision: false },
       },
       {
-        id: 'MiniMax-M2',
-        name: 'MiniMax M2',
+        id: 'MiniMax-M2.5',
+        name: 'MiniMax M2.5',
+        contextWindow: 204800,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'MiniMax-M2.5-highspeed',
+        name: 'MiniMax M2.5 Highspeed',
+        contextWindow: 204800,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'MiniMax-M2.7',
+        name: 'MiniMax M2.7',
+        contextWindow: 204800,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'MiniMax-M2.7-highspeed',
+        name: 'MiniMax M2.7 Highspeed',
         contextWindow: 204800,
         outputWindow: 8192,
         capabilities: { streaming: true, tools: true, vision: false },
@@ -837,6 +921,181 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
       },
     ],
   },
+
+  grok: {
+    id: 'grok',
+    name: 'Grok',
+    type: 'openai',
+    defaultBaseUrl: 'https://api.x.ai/v1',
+    requiresApiKey: true,
+    icon: '/logos/grok.svg',
+    models: [
+      {
+        id: 'grok-4.20-beta-0309-reasoning',
+        name: 'Grok 4.20 Reasoning',
+        contextWindow: 2000000,
+        outputWindow: 131072,
+        capabilities: {
+          streaming: true,
+          tools: true,
+          vision: true,
+          thinking: {
+            toggleable: false,
+            budgetAdjustable: false,
+            defaultEnabled: true,
+          },
+        },
+      },
+      {
+        id: 'grok-4.20-beta-0309-non-reasoning',
+        name: 'Grok 4.20',
+        contextWindow: 2000000,
+        outputWindow: 131072,
+        capabilities: { streaming: true, tools: true, vision: true },
+      },
+      {
+        id: 'grok-code-fast-1',
+        name: 'Grok Code Fast',
+        contextWindow: 256000,
+        outputWindow: 32768,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'grok-4-fast-reasoning',
+        name: 'Grok 4 Fast Reasoning',
+        contextWindow: 2000000,
+        outputWindow: 131072,
+        capabilities: {
+          streaming: true,
+          tools: true,
+          vision: true,
+          thinking: {
+            toggleable: false,
+            budgetAdjustable: false,
+            defaultEnabled: true,
+          },
+        },
+      },
+      {
+        id: 'grok-4-fast-non-reasoning',
+        name: 'Grok 4 Fast',
+        contextWindow: 2000000,
+        outputWindow: 131072,
+        capabilities: { streaming: true, tools: true, vision: true },
+      },
+      {
+        id: 'grok-4-1-fast-reasoning',
+        name: 'Grok 4.1 Fast Reasoning',
+        contextWindow: 2000000,
+        outputWindow: 131072,
+        capabilities: {
+          streaming: true,
+          tools: true,
+          vision: true,
+          thinking: {
+            toggleable: false,
+            budgetAdjustable: false,
+            defaultEnabled: true,
+          },
+        },
+      },
+      {
+        id: 'grok-4-1-fast-non-reasoning',
+        name: 'Grok 4.1 Fast',
+        contextWindow: 2000000,
+        outputWindow: 131072,
+        capabilities: { streaming: true, tools: true, vision: true },
+      },
+      {
+        id: 'grok-4-0709',
+        name: 'Grok 4',
+        contextWindow: 256000,
+        outputWindow: 32768,
+        capabilities: { streaming: true, tools: true, vision: true },
+      },
+      {
+        id: 'grok-3',
+        name: 'Grok 3',
+        contextWindow: 131072,
+        outputWindow: 32768,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'grok-3-mini',
+        name: 'Grok 3 Mini',
+        contextWindow: 131072,
+        outputWindow: 32768,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+    ],
+  },
+
+  ollama: {
+    id: 'ollama',
+    name: 'Ollama',
+    type: 'openai',
+    defaultBaseUrl: 'http://localhost:11434/v1',
+    requiresApiKey: false,
+    icon: '/logos/ollama.svg',
+    models: [
+      {
+        id: 'llama3.3',
+        name: 'Llama 3.3 70B',
+        contextWindow: 131072,
+        outputWindow: 4096,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'llama3.2',
+        name: 'Llama 3.2 3B',
+        contextWindow: 131072,
+        outputWindow: 4096,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'qwen2.5',
+        name: 'Qwen 2.5 7B',
+        contextWindow: 131072,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'qwen2.5:32b',
+        name: 'Qwen 2.5 32B',
+        contextWindow: 131072,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: true, vision: false },
+      },
+      {
+        id: 'mistral',
+        name: 'Mistral 7B',
+        contextWindow: 32768,
+        outputWindow: 4096,
+        capabilities: { streaming: true, tools: false, vision: false },
+      },
+      {
+        id: 'gemma3',
+        name: 'Gemma 3 12B',
+        contextWindow: 131072,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: true, vision: true },
+      },
+      {
+        id: 'deepseek-r1',
+        name: 'DeepSeek R1',
+        contextWindow: 131072,
+        outputWindow: 8192,
+        capabilities: { streaming: true, tools: false, vision: false },
+      },
+      {
+        id: 'phi4',
+        name: 'Phi-4 14B',
+        contextWindow: 16384,
+        outputWindow: 4096,
+        capabilities: { streaming: true, tools: false, vision: false },
+      },
+    ],
+  },
 };
 
 /**
@@ -922,20 +1181,42 @@ function getCompatThinkingBodyParams(
   return undefined;
 }
 
+function normalizeMiniMaxAnthropicBaseUrl(
+  providerId: ProviderId,
+  baseUrl?: string,
+): string | undefined {
+  if (providerId !== 'minimax' || !baseUrl) {
+    return baseUrl;
+  }
+
+  const trimmed = baseUrl.replace(/\/$/, '');
+  if (trimmed.endsWith('/anthropic/v1')) {
+    return trimmed;
+  }
+  if (trimmed.endsWith('/anthropic')) {
+    return `${trimmed}/v1`;
+  }
+  return `${trimmed}/anthropic/v1`;
+}
+
+/** Returns true if the provider requires an API key (defaults to true for unknown providers). */
+export function isProviderKeyRequired(providerId: string): boolean {
+  return getProviderConfig(providerId as ProviderId)?.requiresApiKey ?? true;
+}
+
 /**
  * Get a configured language model instance with its info
  * Accepts individual parameters for flexibility and security
  */
 export function getModel(config: ModelConfig): ModelWithInfo {
-  // Get provider type and requiresApiKey, with fallback to registry
+  // providerType can come from client for custom providers; fall back to registry.
   let providerType = config.providerType;
-  let requiresApiKey = config.requiresApiKey ?? true;
+  const provider = getProviderConfig(config.providerId);
+  const requiresApiKey = provider?.requiresApiKey ?? true;
 
   if (!providerType) {
-    const provider = getProviderConfig(config.providerId);
     if (provider) {
       providerType = provider.type;
-      requiresApiKey = provider.requiresApiKey;
     } else {
       throw new Error(`Unknown provider: ${config.providerId}. Please provide providerType.`);
     }
@@ -950,8 +1231,10 @@ export function getModel(config: ModelConfig): ModelWithInfo {
   const effectiveApiKey = config.apiKey || '';
 
   // Resolve base URL: explicit > provider default > SDK default
-  const provider = getProviderConfig(config.providerId);
-  const effectiveBaseUrl = config.baseUrl || provider?.defaultBaseUrl || undefined;
+  const effectiveBaseUrl = normalizeMiniMaxAnthropicBaseUrl(
+    config.providerId,
+    config.baseUrl || provider?.defaultBaseUrl || undefined,
+  );
 
   let model: LanguageModel;
 

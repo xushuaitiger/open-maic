@@ -48,6 +48,8 @@ const LLM_ENV_MAP: Record<string, string> = {
   GLM: 'glm',
   SILICONFLOW: 'siliconflow',
   DOUBAO: 'doubao',
+  GROK: 'grok',
+  OLLAMA: 'ollama',
 };
 
 const TTS_ENV_MAP: Record<string, string> = {
@@ -55,6 +57,9 @@ const TTS_ENV_MAP: Record<string, string> = {
   TTS_AZURE: 'azure-tts',
   TTS_GLM: 'glm-tts',
   TTS_QWEN: 'qwen-tts',
+  TTS_DOUBAO: 'doubao-tts',
+  TTS_ELEVENLABS: 'elevenlabs-tts',
+  TTS_MINIMAX: 'minimax-tts',
 };
 
 const ASR_ENV_MAP: Record<string, string> = {
@@ -65,12 +70,15 @@ const ASR_ENV_MAP: Record<string, string> = {
 const PDF_ENV_MAP: Record<string, string> = {
   PDF_UNPDF: 'unpdf',
   PDF_MINERU: 'mineru',
+  PDF_MINERU_CLOUD: 'mineru-cloud',
 };
 
 const IMAGE_ENV_MAP: Record<string, string> = {
   IMAGE_SEEDREAM: 'seedream',
   IMAGE_QWEN_IMAGE: 'qwen-image',
   IMAGE_NANO_BANANA: 'nano-banana',
+  IMAGE_MINIMAX: 'minimax-image',
+  IMAGE_GROK: 'grok-image',
 };
 
 const VIDEO_ENV_MAP: Record<string, string> = {
@@ -78,6 +86,8 @@ const VIDEO_ENV_MAP: Record<string, string> = {
   VIDEO_KLING: 'kling',
   VIDEO_VEO: 'veo',
   VIDEO_SORA: 'sora',
+  VIDEO_MINIMAX: 'minimax-video',
+  VIDEO_GROK: 'grok-video',
 };
 
 const WEB_SEARCH_ENV_MAP: Record<string, string> = {
@@ -119,15 +129,23 @@ function loadYamlFile(filename: string): YamlData {
 function loadEnvSection(
   envMap: Record<string, string>,
   yamlSection: Record<string, Partial<ServerProviderEntry>> | undefined,
+  {
+    requiresBaseUrl = false,
+    keylessProviders = new Set<string>(),
+  }: { requiresBaseUrl?: boolean; keylessProviders?: Set<string> } = {},
 ): Record<string, ServerProviderEntry> {
   const result: Record<string, ServerProviderEntry> = {};
 
   // First, add everything from YAML as defaults
   if (yamlSection) {
     for (const [id, entry] of Object.entries(yamlSection)) {
-      if (entry?.apiKey) {
+      if (
+        requiresBaseUrl
+          ? !!entry?.baseUrl
+          : entry?.apiKey || (entry?.baseUrl && keylessProviders.has(id))
+      ) {
         result[id] = {
-          apiKey: entry.apiKey,
+          apiKey: entry.apiKey || '',
           baseUrl: entry.baseUrl,
           models: entry.models,
           proxy: entry.proxy,
@@ -156,9 +174,15 @@ function loadEnvSection(
       continue;
     }
 
-    if (!envApiKey) continue;
+    // Activate on API key, or base URL alone for keyless providers (e.g. Ollama)
+    if (
+      requiresBaseUrl
+        ? !envBaseUrl
+        : !(envApiKey || (envBaseUrl && keylessProviders.has(providerId)))
+    )
+      continue;
     result[providerId] = {
-      apiKey: envApiKey,
+      apiKey: envApiKey || '',
       baseUrl: envBaseUrl,
       models: envModels,
     };
@@ -178,10 +202,12 @@ const _configs: Map<string, ServerConfig> = new Map();
 
 function buildConfig(yamlData: YamlData): ServerConfig {
   return {
-    providers: loadEnvSection(LLM_ENV_MAP, yamlData.providers),
+    providers: loadEnvSection(LLM_ENV_MAP, yamlData.providers, {
+      keylessProviders: new Set(['ollama']),
+    }),
     tts: loadEnvSection(TTS_ENV_MAP, yamlData.tts),
     asr: loadEnvSection(ASR_ENV_MAP, yamlData.asr),
-    pdf: loadEnvSection(PDF_ENV_MAP, yamlData.pdf),
+    pdf: loadEnvSection(PDF_ENV_MAP, yamlData.pdf, { requiresBaseUrl: true }),
     image: loadEnvSection(IMAGE_ENV_MAP, yamlData.image),
     video: loadEnvSection(VIDEO_ENV_MAP, yamlData.video),
     webSearch: loadEnvSection(WEB_SEARCH_ENV_MAP, yamlData['web-search']),

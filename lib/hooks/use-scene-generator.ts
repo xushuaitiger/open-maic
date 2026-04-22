@@ -42,7 +42,6 @@ function getApiHeaders(): HeadersInit {
     'x-api-key': config.apiKey || '',
     'x-base-url': config.baseUrl || '',
     'x-provider-type': config.providerType || '',
-    'x-requires-api-key': String(config.requiresApiKey ?? false),
     // Image generation provider
     'x-image-provider': settings.imageProviderId || '',
     'x-image-model': settings.imageModelId || '',
@@ -74,6 +73,7 @@ async function fetchSceneContent(
       style?: string;
     };
     agents?: AgentInfo[];
+    languageDirective?: string;
   },
   signal?: AbortSignal,
 ): Promise<SceneContentResult> {
@@ -102,6 +102,7 @@ async function fetchSceneActions(
     agents?: AgentInfo[];
     previousSpeeches?: string[];
     userProfile?: string;
+    languageDirective?: string;
   },
   signal?: AbortSignal,
 ): Promise<SceneActionsResult> {
@@ -137,10 +138,12 @@ export async function generateAndStoreTTS(
       text,
       audioId,
       ttsProviderId: settings.ttsProviderId,
+      ttsModelId: ttsProviderConfig?.modelId,
       ttsVoice: settings.ttsVoice,
       ttsSpeed: settings.ttsSpeed,
       ttsApiKey: ttsProviderConfig?.apiKey || undefined,
-      ttsBaseUrl: ttsProviderConfig?.baseUrl || undefined,
+      ttsBaseUrl:
+        ttsProviderConfig?.baseUrl || ttsProviderConfig?.customDefaultBaseUrl || undefined,
     }),
     signal,
   });
@@ -185,8 +188,13 @@ async function generateTTSForScene(
   let failedCount = 0;
   let lastError: string | undefined;
 
+  // Use scene order to make audio IDs unique across scenes
+  // This prevents audio collision when action IDs are sequential (e.g., action_1, action_2)
+  const sceneOrder = scene.order;
+
   for (const action of speechActions) {
-    const audioId = `tts_${action.id}`;
+    // Include scene order in audioId to prevent collision across scenes
+    const audioId = `tts_s${sceneOrder}_${action.id}`;
     action.audioId = audioId;
     try {
       await generateAndStoreTTS(audioId, action.text, signal);
@@ -196,6 +204,8 @@ async function generateTTSForScene(
       log.warn('TTS generation failed:', {
         providerId,
         actionId: action.id,
+        sceneOrder,
+        audioId,
         textLength: action.text.length,
         error: lastError,
       });
@@ -227,6 +237,7 @@ export interface GenerationParams {
   };
   agents?: AgentInfo[];
   userProfile?: string;
+  languageDirective?: string;
 }
 
 export function useSceneGenerator(options: UseSceneGeneratorOptions = {}) {
@@ -320,6 +331,7 @@ export function useSceneGenerator(options: UseSceneGeneratorOptions = {}) {
               imageMapping: params.imageMapping,
               stageInfo: params.stageInfo,
               agents: params.agents,
+              languageDirective: params.languageDirective,
             },
             signal,
           );
@@ -353,6 +365,7 @@ export function useSceneGenerator(options: UseSceneGeneratorOptions = {}) {
               agents: params.agents,
               previousSpeeches,
               userProfile: params.userProfile,
+              languageDirective: params.languageDirective,
             },
             signal,
           );
@@ -469,6 +482,7 @@ export function useSceneGenerator(options: UseSceneGeneratorOptions = {}) {
             imageMapping: params.imageMapping,
             stageInfo: params.stageInfo,
             agents: params.agents,
+            languageDirective: params.languageDirective,
           },
           signal,
         );
@@ -496,6 +510,7 @@ export function useSceneGenerator(options: UseSceneGeneratorOptions = {}) {
             agents: params.agents,
             previousSpeeches,
             userProfile: params.userProfile,
+            languageDirective: params.languageDirective,
           },
           signal,
         );

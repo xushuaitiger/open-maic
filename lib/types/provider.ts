@@ -15,7 +15,9 @@ export type BuiltInProviderId =
   | 'minimax'
   | 'glm'
   | 'siliconflow'
-  | 'doubao';
+  | 'doubao'
+  | 'grok'
+  | 'ollama';
 
 /**
  * Provider ID (built-in or custom)
@@ -84,6 +86,11 @@ export interface ProviderConfig {
   name: string;
   type: ProviderType;
   defaultBaseUrl?: string;
+  /**
+   * Known alternate base URLs for this provider (e.g. regional endpoints).
+   * Rendered in the settings UI as quick-select chips under the base URL input.
+   */
+  alternateBaseUrls?: { label: string; url: string }[];
   requiresApiKey: boolean;
   icon?: string;
   models: ModelInfo[];
@@ -99,5 +106,4 @@ export interface ModelConfig {
   baseUrl?: string;
   proxy?: string; // Optional: HTTP proxy URL for this provider
   providerType?: ProviderType; // Optional: for custom providers on server-side
-  requiresApiKey?: boolean; // Optional: for custom providers on server-side
 }
