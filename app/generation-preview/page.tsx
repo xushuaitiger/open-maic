@@ -377,7 +377,7 @@ function GenerationPreviewContent() {
           const collected: SceneOutline[] = [];
           let directive: string | undefined;
 
-          fetch('/api/generate/scene-outlines-stream', {
+          fetch('/python/api/generate/scene-outlines-stream', {
             method: 'POST',
             headers: getApiHeaders(),
             body: JSON.stringify({
@@ -675,7 +675,7 @@ function GenerationPreviewContent() {
       const firstOutline = outlines[0];
 
       // Step 2: Generate content (currentStepIndex is already 2)
-      const contentResp = await fetch('/api/generate/scene-content', {
+      const contentResp = await fetch('/python/api/generate/scene-content', {
         method: 'POST',
         headers: getApiHeaders(),
         body: JSON.stringify({
@@ -705,7 +705,7 @@ function GenerationPreviewContent() {
       const actionsStepIdx = activeSteps.findIndex((s) => s.id === 'actions');
       setCurrentStepIndex(actionsStepIdx >= 0 ? actionsStepIdx : currentStepIndex + 1);
 
-      const actionsResp = await fetch('/api/generate/scene-actions', {
+      const actionsResp = await fetch('/python/api/generate/scene-actions', {
         method: 'POST',
         headers: getApiHeaders(),
         body: JSON.stringify({

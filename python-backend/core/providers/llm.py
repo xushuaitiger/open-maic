@@ -117,9 +117,12 @@ async def call_llm(
     resolved: ResolvedModel,
     messages: list[dict[str, Any]],
     max_tokens: int | None = None,
-    temperature: float = 0.7,
+    temperature: float | None = None,
 ) -> str:
-    """Call an LLM and return the full text response."""
+    """Call an LLM and return the full text response.
+
+    temperature defaults to None — the provider's own default is used.
+    """
     if resolved.client_type == "anthropic":
         return await _call_anthropic(resolved, messages, max_tokens, temperature)
     elif resolved.client_type == "google":
@@ -132,9 +135,13 @@ async def stream_llm(
     resolved: ResolvedModel,
     messages: list[dict[str, Any]],
     max_tokens: int | None = None,
-    temperature: float = 0.7,
+    temperature: float | None = None,
 ):
-    """Yield text chunks from an LLM stream."""
+    """Yield text chunks from an LLM stream.
+
+    temperature defaults to None — the provider's own default is used.
+    Pass an explicit value only when you need to override it.
+    """
     if resolved.client_type == "anthropic":
         async for chunk in _stream_anthropic(resolved, messages, max_tokens, temperature):
             yield chunk
@@ -151,7 +158,7 @@ async def call_llm_with_tools(
     messages: list[dict[str, Any]],
     tools: list[dict] | None,
     max_tokens: int | None = None,
-    temperature: float = 0.2,
+    temperature: float | None = None,
     text_only: bool = False,
 ) -> Any:
     """
@@ -189,7 +196,7 @@ async def _call_openai_with_tools(
     messages: list[dict[str, Any]],
     tools: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ) -> dict:
     from openai import AsyncOpenAI
 
@@ -204,10 +211,11 @@ async def _call_openai_with_tools(
     params: dict[str, Any] = {
         "model": resolved.model_id,
         "messages": messages,
-        "temperature": temperature,
         "tools": tools,
         "tool_choice": "auto",
     }
+    if temperature is not None:
+        params["temperature"] = temperature
     if max_tokens:
         params["max_tokens"] = max_tokens
 
@@ -238,7 +246,7 @@ async def _call_anthropic_with_tools(
     messages: list[dict[str, Any]],
     tools: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ) -> dict:
     import anthropic as anthropic_sdk
 
@@ -272,9 +280,10 @@ async def _call_anthropic_with_tools(
         "model": resolved.model_id,
         "messages": chat_messages,
         "max_tokens": max_tokens or 8192,
-        "temperature": temperature,
         "tools": anthropic_tools,
     }
+    if temperature is not None:
+        params["temperature"] = temperature
     if system_text:
         params["system"] = system_text
 
@@ -308,7 +317,7 @@ async def _call_google_with_tools(
     messages: list[dict[str, Any]],
     tools: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ) -> dict:
     import google.generativeai as genai
 
@@ -335,7 +344,9 @@ async def _call_google_with_tools(
         tools=gemini_tools,
     )
 
-    gen_config: dict[str, Any] = {"temperature": temperature}
+    gen_config: dict[str, Any] = {}
+    if temperature is not None:
+        gen_config["temperature"] = temperature
     if max_tokens:
         gen_config["max_output_tokens"] = max_tokens
 
@@ -378,7 +389,7 @@ async def _call_openai_compatible(
     resolved: ResolvedModel,
     messages: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ) -> str:
     from openai import AsyncOpenAI
 
@@ -393,8 +404,9 @@ async def _call_openai_compatible(
     params: dict[str, Any] = {
         "model": resolved.model_id,
         "messages": messages,
-        "temperature": temperature,
     }
+    if temperature is not None:
+        params["temperature"] = temperature
     if max_tokens:
         params["max_tokens"] = max_tokens
 
@@ -410,7 +422,7 @@ async def _stream_openai_compatible(
     resolved: ResolvedModel,
     messages: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ):
     from openai import AsyncOpenAI
 
@@ -425,16 +437,22 @@ async def _stream_openai_compatible(
     params: dict[str, Any] = {
         "model": resolved.model_id,
         "messages": messages,
-        "temperature": temperature,
         "stream": True,
     }
+    # Only include temperature when explicitly specified; some providers
+    # (e.g. Kimi kimi-k2.5) reject any value other than their own default.
+    if temperature is not None:
+        params["temperature"] = temperature
     if max_tokens:
         params["max_tokens"] = max_tokens
 
-    async with client.chat.completions.stream(**params) as stream:
-        async for event in stream:
-            if event.choices and event.choices[0].delta.content:
-                yield event.choices[0].delta.content
+    # Use create(stream=True) — compatible with all OpenAI-compatible providers.
+    # .stream() is an OpenAI-SDK-specific helper that does NOT accept stream=True.
+    async with provider_semaphore(resolved.provider_id):
+        response = await client.chat.completions.create(**params)
+        async for chunk in response:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
 
 
 # ---------------------------------------------------------------------------
@@ -445,7 +463,7 @@ async def _call_anthropic(
     resolved: ResolvedModel,
     messages: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ) -> str:
     import anthropic as anthropic_sdk
 
@@ -457,7 +475,6 @@ async def _call_anthropic(
 
     client = anthropic_sdk.AsyncAnthropic(**kwargs)
 
-    # Separate system prompt from messages
     system_text = ""
     chat_messages = []
     for msg in messages:
@@ -470,8 +487,9 @@ async def _call_anthropic(
         "model": resolved.model_id,
         "messages": chat_messages,
         "max_tokens": max_tokens or 8192,
-        "temperature": temperature,
     }
+    if temperature is not None:
+        params["temperature"] = temperature
     if system_text:
         params["system"] = system_text
 
@@ -487,7 +505,7 @@ async def _stream_anthropic(
     resolved: ResolvedModel,
     messages: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ):
     import anthropic as anthropic_sdk
 
@@ -511,8 +529,9 @@ async def _stream_anthropic(
         "model": resolved.model_id,
         "messages": chat_messages,
         "max_tokens": max_tokens or 8192,
-        "temperature": temperature,
     }
+    if temperature is not None:
+        params["temperature"] = temperature
     if system_text:
         params["system"] = system_text
 
@@ -529,26 +548,24 @@ async def _call_google(
     resolved: ResolvedModel,
     messages: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ) -> str:
     import google.generativeai as genai
 
     if resolved.api_key:
         genai.configure(api_key=resolved.api_key)
 
-    model = genai.GenerativeModel(resolved.model_id)
-
-    # Build Gemini content from messages
     contents = _messages_to_gemini(messages)
     system_instruction = _extract_system(messages)
 
-    if system_instruction:
-        model = genai.GenerativeModel(
-            resolved.model_id,
-            system_instruction=system_instruction,
-        )
+    model = genai.GenerativeModel(
+        resolved.model_id,
+        system_instruction=system_instruction or None,
+    )
 
-    gen_config: dict[str, Any] = {"temperature": temperature}
+    gen_config: dict[str, Any] = {}
+    if temperature is not None:
+        gen_config["temperature"] = temperature
     if max_tokens:
         gen_config["max_output_tokens"] = max_tokens
 
@@ -564,7 +581,7 @@ async def _stream_google(
     resolved: ResolvedModel,
     messages: list[dict],
     max_tokens: int | None,
-    temperature: float,
+    temperature: float | None,
 ):
     import google.generativeai as genai
 
@@ -578,7 +595,9 @@ async def _stream_google(
     )
     contents = _messages_to_gemini(messages)
 
-    gen_config: dict[str, Any] = {"temperature": temperature}
+    gen_config: dict[str, Any] = {}
+    if temperature is not None:
+        gen_config["temperature"] = temperature
     if max_tokens:
         gen_config["max_output_tokens"] = max_tokens
 

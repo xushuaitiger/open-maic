@@ -12,7 +12,7 @@ export class MockApi {
 
   /** Mock the SSE outline streaming endpoint */
   async mockSceneOutlinesStream(outlines = mockOutlines) {
-    await this.page.route('**/api/generate/scene-outlines-stream', (route) => {
+    await this.page.route('**/python/api/generate/scene-outlines-stream', (route) => {
       const events = outlines
         .map(
           (outline, i) =>

@@ -80,8 +80,16 @@ def _request_id_of(request: Request | None) -> str:
 
 
 def api_success(data: Any, *, status_code: int = 200, request: Request | None = None) -> JSONResponse:
-    """Build a standard success JSONResponse."""
-    payload: dict[str, Any] = {"success": True, "data": data}
+    """Build a standard success JSONResponse.
+
+    Matches the TypeScript apiSuccess() which spreads fields flat:
+      { success: true, ...data }
+    NOT nested under a 'data' key.
+    """
+    if isinstance(data, dict):
+        payload: dict[str, Any] = {"success": True, **data}
+    else:
+        payload = {"success": True, "data": data}
     rid = _request_id_of(request)
     if rid:
         payload["requestId"] = rid

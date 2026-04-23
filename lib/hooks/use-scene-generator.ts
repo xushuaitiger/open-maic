@@ -58,7 +58,7 @@ function getApiHeaders(): HeadersInit {
   };
 }
 
-/** Call POST /api/generate/scene-content (step 1) */
+/** Call POST /python/api/generate/scene-content (step 1) */
 async function fetchSceneContent(
   params: {
     outline: SceneOutline;
@@ -77,7 +77,7 @@ async function fetchSceneContent(
   },
   signal?: AbortSignal,
 ): Promise<SceneContentResult> {
-  const response = await fetch('/api/generate/scene-content', {
+  const response = await fetch('/python/api/generate/scene-content', {
     method: 'POST',
     headers: getApiHeaders(),
     body: JSON.stringify(params),
@@ -92,7 +92,7 @@ async function fetchSceneContent(
   return response.json();
 }
 
-/** Call POST /api/generate/scene-actions (step 2) */
+/** Call POST /python/api/generate/scene-actions (step 2) */
 async function fetchSceneActions(
   params: {
     outline: SceneOutline;
@@ -106,7 +106,7 @@ async function fetchSceneActions(
   },
   signal?: AbortSignal,
 ): Promise<SceneActionsResult> {
-  const response = await fetch('/api/generate/scene-actions', {
+  const response = await fetch('/python/api/generate/scene-actions', {
     method: 'POST',
     headers: getApiHeaders(),
     body: JSON.stringify(params),
