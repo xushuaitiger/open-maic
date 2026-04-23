@@ -362,6 +362,52 @@ async def director_node(state: OrchestratorState) -> dict:
 
         decision = _extract_director_decision(decision_text, [a.id for a in agents])
 
+        # ── Multi-agent engagement safety net ──
+        # When 2+ agents are configured and only ONE has spoken so far, an
+        # immediate END/USER is almost always an LLM cop-out — the director
+        # prompt explicitly instructs it to engage at least one more role.
+        # Promote such early shortcuts into a dispatch of the next best
+        # unspoken non-teacher agent, which is what TS behaviour looks like
+        # in practice ("显眼包 → AI教师" etc.).
+        def _pick_unspoken_engagement_agent() -> AgentConfig | None:
+            responded_ids = {
+                (r.get("agentId") or r.get("agent_id"))
+                for r in (state.get("agent_responses") or [])
+            }
+            unspoken = [a for a in agents if a.id not in responded_ids]
+            if not unspoken:
+                return None
+            non_teacher = [
+                a for a in unspoken if (a.role or "").lower() != "teacher"
+            ]
+            pool = non_teacher or unspoken
+            # Highest priority wins, mirroring registry ordering.
+            pool.sort(key=lambda a: getattr(a, "priority", 0), reverse=True)
+            return pool[0]
+
+        # Only applies when EXACTLY one agent has already spoken — on turn 0
+        # we let the existing `is_first_turn` guard force the teacher first
+        # (per rule 1); on turn 2+ with multiple responders the LLM's END is
+        # already a reasonable wrap-up and we shouldn't second-guess it.
+        early_shortcut = (
+            len(agents) >= 2
+            and len(state.get("agent_responses") or []) == 1
+            and decision in (None, "", "END", "end", "USER")
+        )
+        if early_shortcut:
+            pick = _pick_unspoken_engagement_agent()
+            if pick is not None:
+                log.info(
+                    "Director multi-agent guard: decision %r overridden → "
+                    "dispatch %s (role=%s) to keep discussion going",
+                    decision, pick.id, pick.role,
+                )
+                _safe_write({
+                    "type": "thinking",
+                    "data": {"stage": "agent_loading", "agentId": pick.id},
+                })
+                return {"current_agent_id": pick.id, "should_end": False}
+
         if decision in (None, "", "END", "end"):
             # Turn-0 END with zero agent responses is always a model mistake —
             # the user just spoke and SOMEONE needs to respond. Force the
@@ -709,7 +755,11 @@ async def agent_generate_node(state: OrchestratorState) -> dict:
         "agent_responses": [{
             "agentId": agent_id,
             "agentName": agent.name,
-            "contentPreview": full_text[:100],  # matches TS slice(0, 100)
+            # 300 chars matches TS runAgentGeneration. The director reads this
+            # preview to decide who speaks next — cutting it at 100 hid enough
+            # of the response that the director often couldn't tell what was
+            # still missing, so it defaulted to END.
+            "contentPreview": full_text[:300],
             "actionCount": action_count,
             "whiteboardActions": whiteboard_actions,
         }],

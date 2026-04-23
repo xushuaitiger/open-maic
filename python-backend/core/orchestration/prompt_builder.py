@@ -944,6 +944,53 @@ def build_director_prompt(
         else "CLOSED (slide canvas is visible)"
     )
 
+    # ── Multi-agent engagement hint ────────────────────────────────
+    # When 2+ agents are available we want the classroom to feel like a real
+    # multi-voice discussion instead of "teacher answers, end". Build a
+    # targeted section that summarizes which roles have / haven't spoken yet
+    # and pushes the director toward role diversity on turn 2+.
+    total_agents = len(agents)
+    responded_ids = {
+        (r.get("agentId") or r.get("agent_id")) for r in agent_responses
+    } if agent_responses else set()
+    unspoken_agents = [a for a in agents if a.id not in responded_ids]
+    spoken_roles = {
+        a.role for a in agents if a.id in responded_ids
+    }
+    unspoken_non_teacher = [
+        a for a in unspoken_agents if (a.role or "").lower() != "teacher"
+    ]
+
+    if total_agents >= 2 and len(responded_ids) == 0:
+        engagement_section = (
+            "\n# Multi-Agent Engagement\n"
+            f"There are {total_agents} agents available this round and none has "
+            "spoken yet. This is a multi-voice classroom — aim for 2-3 different "
+            "roles to contribute before ending.\n"
+        )
+    elif total_agents >= 2 and len(responded_ids) >= 1 and unspoken_non_teacher:
+        unspoken_preview = ", ".join(
+            f'{a.name} ({a.id}, role={a.role})' for a in unspoken_non_teacher[:4]
+        )
+        spoken_role_list = ", ".join(sorted(spoken_roles)) or "(none)"
+        engagement_section = (
+            "\n# Multi-Agent Engagement (IMPORTANT)\n"
+            f"Only {len(responded_ids)} of {total_agents} agents have spoken this round. "
+            f"Roles that already spoke: {spoken_role_list}. "
+            f"Roles that have NOT spoken yet: {unspoken_preview}.\n"
+            "This is a multi-voice classroom, NOT a single-teacher Q&A. Before "
+            "ending, you should dispatch at least one more agent with a DIFFERENT "
+            "role (typically a student or assistant) so the discussion feels alive. "
+            "Only output END if:\n"
+            "  (a) the user asked a trivial yes/no or one-word question AND it's "
+            "fully answered, OR\n"
+            "  (b) an unspoken agent has nothing new to contribute (same role as "
+            "one who already spoke, or no relevant perspective).\n"
+            "In doubt, dispatch another agent rather than ending.\n"
+        )
+    else:
+        engagement_section = ""
+
     return f"""You are the Director of a multi-agent classroom. Your job is to decide which agent should speak next based on the conversation context.
 
 # Available Agents
@@ -954,15 +1001,15 @@ def build_director_prompt(
 
 # Conversation Context
 {conversation_summary}
-{discussion_section}{whiteboard_section}{student_profile_section}
+{discussion_section}{whiteboard_section}{student_profile_section}{engagement_section}
 # Rules
 {rule1}
-2. After the teacher, consider whether a student agent would add value (ask a follow-up question, crack a joke, take notes, offer a different perspective).
+2. After the teacher, a student/assistant agent SHOULD normally follow up (ask a follow-up question, crack a joke, take notes, offer a different perspective). Skipping this step makes the classroom feel like a solo lecture.
 3. Do NOT repeat an agent who already spoke this round unless absolutely necessary.
-4. If the conversation seems complete (question answered, topic covered), output END.
-5. Current turn: {turn_count + 1}. Consider conversation length — don't let discussions drag on unnecessarily.
-6. Prefer brevity — 1-2 agents responding is usually enough. Don't force every agent to speak.
-7. You can output {{"next_agent":"USER"}} to cue the user to speak. Use this when a student asks the user a direct question or when the topic naturally calls for user input.
+4. Only output END when the discussion is genuinely complete AND every remaining agent would be redundant. When in doubt with a multi-agent roster, dispatch one more agent (of a different role) instead of ending.
+5. Current turn: {turn_count + 1}. Consider conversation length — don't let discussions drag on unnecessarily, but also don't cut them short after a single agent.
+6. Prefer brevity per agent, NOT brevity in agent count — aim for 2-3 short voices rather than one long monologue. With 2+ agents available, a single-agent turn is almost always too short.
+7. You can output {{"next_agent":"USER"}} to cue the user to speak. Use this when a student asks the user a direct question or when the topic naturally calls for user input. Do NOT use USER just to shortcut out of dispatching another agent.
 8. Consider whiteboard state when routing: if the whiteboard is already crowded, avoid dispatching agents that are likely to add more whiteboard content unless they would clear or organize it.
 9. Whiteboard is currently {wb_status}. When the whiteboard is open, do not expect spotlight or laser actions to have visible effect.
 
