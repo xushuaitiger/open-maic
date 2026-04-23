@@ -110,6 +110,8 @@ Visit `http://localhost:8000/docs` for interactive API docs.
 | POST | `/api/generate/image` | Generate image |
 | POST | `/api/generate/video` | Generate video |
 
+When the Next.js app is fronted by Nginx with a `/python/` prefix to this service, the browser calls paths like **`/python/api/chat`** (same path under FastAPI: `/api/chat`).
+
 ## Configuration
 
 ### Option 1: `.env` file
